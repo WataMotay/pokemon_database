@@ -1,0 +1,98 @@
+Brendan Soper
+Front End Database Overview
+-------------------
+
+I decided to split my webpage into six sections; 5 of them being places where users 
+can get results for different types of queries, and the 6th page being an admin page
+where a user can add/modify or delete an entry from the core table relation..
+
+Pokedex
+--------
+The pokedex section is the most simplistic of the sections; a user can select their 
+pokemon(s) of choice (the 151 pokemon are split into 5 scroll boxes, sorted by Pokemon
+ID) and when they hit submit; they will be taken to a results page that will display 
+a table that shows the traits (name, id, height, weight, if they can evolve, primary/secondary
+type, ability) of the pokemon selected.
+
+Type/HM Checker
+----------------
+The type/hm Checker is somewhat more complex. It has 2 main functionalities that can combine 
+to create a third functionality (depends on what the user wants). The first scroll box on this
+page allows a user to select certain types of pokemon (there are 15 types in the first generation)
+and return all pokemon who have that type as a primary type, or secondary type. 
+
+The second scroll box has the list of HM's (hidden machines) that a pokemon can learn; selecting one 
+(while having 'All Types' selected in the first box) will give you all the pokemon who can learn that HM move.
+Selecting multiple moves will give you ONLY the pokemon who can learn all those moves (this is intended); pokemon
+who can only learn a subset of the moves selected will not be displayed.
+
+It is possible to combine these functionalities and return pokemon of a certain type who can learn certain 
+HM moves. This took quite a bit of doing, with a combination of fancy PHP and SQL working together. I can explain
+in more detail later if you wish, but the jist is that, the way my HM table is set up in my database, to return
+whether a pokemon can learn a move, you check a boolean value (Y/N) for the columns of HM moves. In other words, 
+its like I am matching by columns, instead of rows. This is fine if the user only wants one HM, but I had to be 
+creative if a user wanted more than one HM, and write some php...
+	foreach($mNameArray as $result) {
+		$i++;
+		if($i < $array_size)
+		{
+			$move_array[$i] = sprintf($myString, $result, "AND");
+		}
+		else
+		{
+			$move_array[$i] =  sprintf($myString, $result, "");
+		}
+	}
+that basically appends a bunch of 'AND's to generate SQL that looks like: WHERE Surf = 'Y' AND Waterfall = 'Y' AND CUT = 'Y'
+
+...So for example, if you wanted all flying/water pokemon who could learn both Surf and Waterfall,
+the generated SQL would look something like this:
+SELECT DISTINCT A.Name, A.Primary_type, A.Secondary_type FROM `can_learn_hm` as B, `pokemon` as A WHERE Surf = 'Y' AND Waterfall = 'Y' 
+AND (Primary_type IN ('Flying', 'Water') OR Secondary_type IN ('Flying', 'Water')) AND A.name = B.name
+
+*Note: it is desirable to know if a certain type of pokemon can learn a certain type of move, because there are benefits based on if 
+a pokemon uses a move that is the same type as they are; and also some abilities influence certain types of moves.
+
+Ability
+--------
+The ability page is simple, yet has desirable functionality. This page has a scroll bar with all possible pokemon abilites
+(up to generation 3). A user can select an ability or abilites, and then not only get a description of those abilities;
+but also all the pokemon who have access to those abilities (Note* there are a few abilities that are exclusive to gen 3 pokemon,
+which is why some abilities show with no pokemon). This works by imploding all the abilities; and then running a double 
+for each loop on each ability that returns, and then prints out, all pokemon with that ability. One obstacle I had with this
+part is that some pokemon have access to two abilites and in the database that would be displayed as, 
+so I had the SQL had to be written as: Ability1/Ability2; which is one long string. So I had to write the SQL
+"Where Ability LIKE '%" . $rows . "%'"" to sort of match based on substring; to handle pokemon that have access to multiple abilities.
+
+Evolution
+----------
+The evolution page, as the name suggests, gets the name, evolution method, and evolved form,
+of all the pokemon(s) selected. There are two things of note about this page. The first thing of note here is, if a pokemon has a three 
+stage evolutionary line (Ex: Bulbasaur evolves into Ivysaur, which evolves into Venusaur); 
+and they choose the first stage evolution of that pokemon, I decided to show, in addition
+to the first->second stage, the second->third stage, by grabbing the second stage name, and 
+running an additional sql query on that, to get the third name. 
+ 
+The second thing to note is there are 3 pokemon (eevee, poliwag, and slowpoke) in generation 1 who have diverging evolutions 
+(i.e., given different circumstances they can possibly evolve into different pokemon). After doing a few minor modifications;
+they now work as intended, and only show up once in the dropdown box (as opposed to as many times as evolutions they have),
+but still return all possible evolutions/evolution methods.
+
+Weakness Typechart
+------------------
+With Typechart, a player can select certain type(s), and then find out what types are super effective against that type 
+(e.g. selecting fire will return water, ground, and rock). That in itself is not so involved, but once the types are selected, I perform an
+additional sql query on each of those types (again, this is being done in a double foreach loop) and am able to return all pokemon of that type.
+In other words, if someone wants to know how to deal with say, certain type of pokemon (that is, they want to counter that type of pokemon), they can not 
+only return the types that would be super effective against them; but additionally the pokemon who have those types.
+
+Admin Page
+-----------
+
+The admin page allows users to add/modify or delete an entry to the main 'pokemon' relation table. To add
+a new pokemon, simply add the appropriate data to the designated text fields. If you want to modify/update
+a pokemon that already exists in the database, simply put the desired pokemons name into the name field;
+the name functions as the primary key so changing the other fields of an existing primary key will simply
+update that entry.
+
+To delete a pokemon from the database, simply put the name of the desired pokemon into the designated text box.

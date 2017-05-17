@@ -1,0 +1,19 @@
+.select{
+	position: relative;
+	float: left;
+}
+
+.selectWrapper{
+  display: inline-block;	
+  text-align: center;
+}
+
+.selectWrapper2{
+	  display: inline-block;	
+	  text-align: center;
+	  padding-top: 6%;
+	}
+
+span + span{
+	margin-left:15%;
+	}
